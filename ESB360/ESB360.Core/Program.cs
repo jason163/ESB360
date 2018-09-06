@@ -6,7 +6,7 @@ namespace ESB360.Core
     {
         static void Main(string[] args)
         {
-            Console.WriteLine("Hello World!");
+            Console.WriteLine("Hello World Baby!");
         }
     }
 }
