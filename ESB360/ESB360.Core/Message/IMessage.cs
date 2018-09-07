@@ -9,5 +9,8 @@ namespace ESB360.Core
     /// </summary>
     public interface IMessage
     {
+        Dictionary<string,string> Headers { get; }
+
+        IMessage PutHeader(string key, string value);
     }
 }

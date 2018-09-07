@@ -8,7 +8,7 @@ namespace ESB360.Core
     /// <summary>
     /// 发布者抽象
     /// </summary>
-    public interface IProducer
+    public interface IProducer : IBaseChannel
     {
         /// <summary>
         /// 消息发布

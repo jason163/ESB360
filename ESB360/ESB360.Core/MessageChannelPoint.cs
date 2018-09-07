@@ -16,14 +16,14 @@ namespace ESB360.Core
         /// </summary>
         /// <param name="properties"></param>
         /// <returns></returns>
-        IProducer createProducer(Dictionary<string, string> properties);
+        IProducer CreateProducer(Dictionary<string, string> properties);
 
         /// <summary>
         /// 创建消费者
         /// </summary>
         /// <param name="properties"></param>
         /// <returns></returns>
-        IConsumer createConsumer(Dictionary<string, string> properties);
+        IConsumer CreateConsumer(Dictionary<string, string> properties);
 
         /// <summary>
         /// 发布者列表
