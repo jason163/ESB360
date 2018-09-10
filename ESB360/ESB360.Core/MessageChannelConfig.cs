@@ -1,5 +1,7 @@
-﻿using System;
+﻿using Microsoft.Extensions.Configuration;
+using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 
 namespace ESB360.Core
@@ -32,32 +34,43 @@ namespace ESB360.Core
         /// </summary>
         public string Password { get; private set; }
 
+        private Dictionary<string, string> m_properties;
         /// <summary>
         /// 消息通道扩展参数
         /// </summary>
-        public Dictionary<string,string> Properties { get; private set; }
-
-        public MessageChannelConfig(string driverType,string hostAddr,string port,Dictionary<string,string> dic)
-            : this(driverType, hostAddr,port, string.Empty, string.Empty)
+        public Dictionary<string,string> Properties
         {
-            this.Properties = dic;
+            get
+            {
+                m_properties = convertExtendParams(this.Extends);
+                return m_properties;
+            }
+            set
+            {
+                m_properties = value;
+            }
         }
 
-        public MessageChannelConfig(string driverType, string hostAddr,string port, string user, string pwd)
-            : this(driverType, hostAddr,port, user, pwd, string.Empty)
-        {  
+        /// <summary>
+        /// 字符串类型消息通道扩展参数
+        /// </summary>
+        public string Extends { get; private set; }
+
+        /// <summary>
+        /// 加载配置文件
+        /// </summary>
+        public virtual MessageChannelConfig LoadConfig()
+        {
+            // 默认从appsettings.json中加载内容
+            MessageChannelConfig config = new ConfigurationBuilder().SetBasePath(Directory.GetCurrentDirectory()).AddJsonFile("appsettings.json", optional: true)
+                .Build().GetSection("MessageChannel").Get<MessageChannelConfig>();
+
+            return config;
         }
 
-        public MessageChannelConfig(string driverType,string hostAddr,string port,string user,string pwd,string extends)
+        public MessageChannelConfig()
         {
-            this.DriverType = driverType;
-            this.HostAddress = hostAddr;
-            this.Port = port;
-            this.UserName = user;
-            this.Password = pwd;
-
-            // 处理扩展参数
-            this.Properties = convertExtendParams(extends);
+            LoadConfig();
         }
 
         /// <summary>

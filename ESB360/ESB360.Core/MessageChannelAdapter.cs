@@ -16,6 +16,10 @@ namespace ESB360.Core
         /// </summary>
         private static ConcurrentDictionary<string, MessageChannelPoint> channelPointContainer = new ConcurrentDictionary<string, MessageChannelPoint>();
 
+        /// <summary>
+        /// 配置信息都会加载到Key Value里面
+        /// </summary>
+        /// <param name="config"></param>
         public MessageChannelAdapter(MessageChannelConfig config)
         {
             if (this.channelConfig != null)
@@ -30,6 +34,7 @@ namespace ESB360.Core
         /// <returns></returns>
         public virtual MessageChannelPoint GetMessageChannelPoint()
         {
+            // 通过驱动类型、服务IP、服务端口作为通道标识
             string key = string.Format("{0}_{1}_{2}", channelConfig.DriverType, channelConfig.HostAddress, channelConfig.Port);
             if (!channelPointContainer.TryGetValue(key, out MessageChannelPoint channelPoint))
             {
@@ -51,6 +56,7 @@ namespace ESB360.Core
         {
             // 通道实现实例
             string pointImplType = ParseDriverImpl(channelConfig.DriverType, channelConfig.Properties);
+            // 配置信息都会加载到Key Value里面
             return Activator.CreateInstance(Type.GetType(pointImplType), args: channelConfig.Properties) as MessageChannelPoint;
         }
 
