@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ESB360.Processor;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Text;
@@ -17,8 +18,10 @@ namespace ESB360.Core.RabbitMQ
             if(!consumerContainer.ContainsKey(key))
             {
                 Dictionary<string, string> properties = new Dictionary<string, string>();
-                properties.Add(RabbitMQKeys.Exchange, key.Split('_')[0]);
-                properties.Add(RabbitMQKeys.Topic, key.Split('_')[1]);
+                string exchange = key.Split('_')[0];
+                string topic = key.Split('_')[1];
+                properties.Add(RabbitMQKeys.Exchange, exchange);
+                properties.Add(RabbitMQKeys.Topic, topic);
 
                 // 从默认路径加载配置文件
                 var config = new MessageChannelConfig();
@@ -27,8 +30,11 @@ namespace ESB360.Core.RabbitMQ
 
                 IConsumer consumer = channelPoint.CreateConsumer(properties);
 
-                //consumer.AddProcessor()
+                consumer.AddProcessor(new WebAPIProcessor());
 
+                consumer.Startup();
+                consumer.Resume();
+                consumerContainer.TryAdd(topic, consumer);
             }
         }
 

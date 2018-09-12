@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Text;
 
 namespace ESB360.Core
@@ -57,7 +58,11 @@ namespace ESB360.Core
             // 通道实现实例
             string pointImplType = ParseDriverImpl(channelConfig.DriverType, channelConfig.Properties);
             // 配置信息都会加载到Key Value里面
-            return Activator.CreateInstance(Type.GetType(pointImplType), args: channelConfig.Properties) as MessageChannelPoint;
+            // Assembly asmb = Assembly.LoadFrom("EnterpriseServerBase.dll") ;
+            string assemblyName = $"ESB360.Core.{channelConfig.DriverType}.dll";
+            Assembly assembly = Assembly.LoadFrom(assemblyName);
+            Type ImplType = assembly.GetType(pointImplType);
+            return Activator.CreateInstance(ImplType, args: channelConfig.Properties) as MessageChannelPoint;
         }
 
         private string ParseDriverImpl(string driverType,Dictionary<string,string> properties)

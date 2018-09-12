@@ -43,6 +43,13 @@ namespace ESB360.Core
             get
             {
                 m_properties = convertExtendParams(this.Extends);
+                // 所有参数都通过kv形式传递
+                m_properties.Add("driverType", this.DriverType);
+                m_properties.Add("hostAddr", this.HostAddress);
+                m_properties.Add("port", this.Port);
+                m_properties.Add("username", this.UserName);
+                m_properties.Add("password", this.Password);
+
                 return m_properties;
             }
             set
@@ -64,7 +71,15 @@ namespace ESB360.Core
             // 默认从appsettings.json中加载内容
             MessageChannelConfig config = new ConfigurationBuilder().SetBasePath(Directory.GetCurrentDirectory()).AddJsonFile("appsettings.json", optional: true)
                 .Build().GetSection("MessageChannel").Get<MessageChannelConfig>();
-
+            if(null == config)
+            {
+                this.DriverType = "RabbitMQ";
+                this.HostAddress = "192.168.60.28";
+                this.Port = "5672";
+                this.UserName = "test";
+                this.Password = "test";
+                this.Extends = "RetryCount=10&RetryInterval=120000";
+            }
             return config;
         }
 

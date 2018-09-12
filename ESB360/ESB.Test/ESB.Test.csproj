@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp2.1</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ESB360.Core.RabbitMQ\ESB360.Core.RabbitMQ.csproj" />
+    <ProjectReference Include="..\ESB360.Core\ESB360.Core.csproj" />
+    <ProjectReference Include="..\ESB360.RabbitMQ\ESB360.RabbitMQ.csproj" />
+    <ProjectReference Include="..\ESB360\ESB360.csproj" />
+  </ItemGroup>
+
+</Project>
