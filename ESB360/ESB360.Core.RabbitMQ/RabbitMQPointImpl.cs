@@ -67,23 +67,39 @@ namespace ESB360.Core.RabbitMQ
         /// </summary>
         /// <param name="properties"></param>
         /// <returns></returns>
-        private MessageChannelConfig Populate(Dictionary<string,string> properties)
+        private RabbitFactoryInfo Populate(Dictionary<string,string> properties)
         {
+            RabbitFactoryInfo info = new RabbitFactoryInfo();
             // 通道驱动类型
             if (!properties.TryGetValue("driverType", out string driverType))
             {
                 throw new ArgumentException("there is no property [driverType]!");
             }
+            info.DriverType = driverType;
             // 通道地址
             if (!properties.TryGetValue("hostAddr", out string address))
             {
                 throw new ArgumentException("there is no property [address]!");
             }
+            info.HostAddress = address;
             // 通道端口
-            if (!properties.TryGetValue("hostAddr", out string port))
+            if (!properties.TryGetValue("port", out string port))
             {
                 throw new ArgumentException("there is no property [port]!");
             }
+            info.Port = port;
+            // 用户名
+            if (!properties.TryGetValue("username", out string username))
+            {
+                throw new ArgumentException("there is no property [username]!");
+            }
+            info.UserName = username;
+            // 密码
+            if (!properties.TryGetValue("password", out string password))
+            {
+                throw new ArgumentException("there is no property [port]!");
+            }
+            info.Password = password;
 
             if (properties.TryGetValue("networkrecoveryinterval", out string networkrecoveryinterval))
             {
@@ -91,9 +107,11 @@ namespace ESB360.Core.RabbitMQ
                 {
                     throw new ArgumentException("property [networkrecoveryinterval] must be integer!");
                 }
+                info.NetworkRecoveryInterval = interval;
             }
+            
 
-            return new MessageChannelConfig(driverType, address,port, properties);
+            return info;
         }
 
         public IList<IConsumer> Consumers()
@@ -155,5 +173,20 @@ namespace ESB360.Core.RabbitMQ
         {
             throw new NotImplementedException();
         }
+    }
+
+    internal class RabbitFactoryInfo
+    {
+        public string DriverType { get; set; }
+
+        public string HostAddress { get; set; }
+
+        public string Port { get; set; }
+
+        public string UserName { get; set; }
+
+        public string Password { get; set; }
+
+        public int NetworkRecoveryInterval { get; set; }
     }
 }

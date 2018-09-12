@@ -4,6 +4,9 @@ using System.Text;
 
 namespace ESB360.Core
 {
+    /// <summary>
+    /// 文本消息
+    /// </summary>
     public class TextMessage : IMessage
     {
         public Dictionary<string, string> Headers { get; set; }

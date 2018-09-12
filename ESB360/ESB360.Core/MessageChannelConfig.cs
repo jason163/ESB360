@@ -7,7 +7,7 @@ using System.Text;
 namespace ESB360.Core
 {
     /// <summary>
-    /// 消息通道配置信息
+    /// 消息通道配置信息,
     /// </summary>
     public class MessageChannelConfig
     {
