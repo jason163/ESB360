@@ -25,6 +25,10 @@ namespace ESB360.Core
         /// <returns></returns>
         IConsumer CreateConsumer(Dictionary<string, string> properties);
 
+        void SetRetryStrategy(RetryStrategyConfig strategy);
+
+        RetryStrategyConfig GetRetryStrategy();
+
         /// <summary>
         /// 发布者列表
         /// </summary>

@@ -21,7 +21,7 @@ namespace ESB360.Core.RabbitMQ
                 MessageChannelAdapter adapter = new MessageChannelAdapter(config);
                 MessageChannelPoint channelPoint = adapter.GetMessageChannelPoint();
                 // 出消息头中获取Exchange Topic关键信息
-                Dictionary<string, string> properties = new Dictionary<string, string>();
+                Dictionary<string, string> properties = config.Properties;
                 if(message.Headers.TryGetValue(RabbitMQKeys.Exchange,out string exchange))
                 {
                     properties.Add(RabbitMQKeys.Exchange, exchange);

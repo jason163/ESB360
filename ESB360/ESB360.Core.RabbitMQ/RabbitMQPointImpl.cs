@@ -1,4 +1,7 @@
-﻿using RabbitMQ.Client;
+﻿using ESB360.Core.Extends;
+using Newtonsoft.Json;
+using RabbitMQ.Client;
+using RabbitMQ.Client.Events;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -6,12 +9,14 @@ using System.Text;
 namespace ESB360.Core.RabbitMQ
 {
     /// <summary>
-    /// 
+    /// RabbitMQ实现类
     /// </summary>
     public class RabbitMQPointImpl : MessageChannelPoint
     {
         private IConnection connection;
         private Dictionary<string, string> pointProperties;
+        private RetryStrategyConfig retryStrategy;
+        private IModel channel;
 
         // 锁对象 类级别
         private static object sync_obj = new object();
@@ -123,15 +128,15 @@ namespace ESB360.Core.RabbitMQ
         {
             if (pointProperties.TryGetValue(RabbitMQKeys.TDX, out string tdx_value))
             {
-                properties.Add(RabbitMQKeys.TDX, tdx_value);
+                properties.AddWithDuplicate(RabbitMQKeys.TDX, tdx_value);
             }
             if (pointProperties.TryGetValue(RabbitMQKeys.RetryInterval, out string retry_interval))
             {
-                properties.Add(RabbitMQKeys.RetryInterval, retry_interval);
+                properties.AddWithDuplicate(RabbitMQKeys.RetryInterval, retry_interval);
             }
             if (pointProperties.TryGetValue(RabbitMQKeys.RetryCount, out string retry_count))
             {
-                properties.Add(RabbitMQKeys.RetryCount, retry_count);
+                properties.AddWithDuplicate(RabbitMQKeys.RetryCount, retry_count);
             }
             return new RabbitMQConsumer(connection, properties);
         }
@@ -140,15 +145,15 @@ namespace ESB360.Core.RabbitMQ
         {
             if (pointProperties.TryGetValue(RabbitMQKeys.TDX, out string tdx_value))
             {
-                properties.Add(RabbitMQKeys.TDX, tdx_value);
+                properties.AddWithDuplicate(RabbitMQKeys.TDX, tdx_value);
             }
             if (pointProperties.TryGetValue(RabbitMQKeys.RetryInterval, out string retry_interval))
             {
-                properties.Add(RabbitMQKeys.RetryInterval, retry_interval);
+                properties.AddWithDuplicate(RabbitMQKeys.RetryInterval, retry_interval);
             }
             if (pointProperties.TryGetValue(RabbitMQKeys.RetryCount, out string retry_count))
             {
-                properties.Add(RabbitMQKeys.RetryCount, retry_count);
+                properties.AddWithDuplicate(RabbitMQKeys.RetryCount, retry_count);
             }
 
             return new RabbitMQProducer(connection, properties);
@@ -171,7 +176,91 @@ namespace ESB360.Core.RabbitMQ
 
         public void Startup()
         {
-            throw new NotImplementedException();
+            return;
+        }
+
+        /// <summary>
+        /// 重试方案
+        /// </summary>
+        /// <param name="strategy"></param>
+        public void SetRetryStrategy(RetryStrategyConfig strategy)
+        {
+            this.retryStrategy = strategy;
+            if(null != strategy && strategy.RetryInterval > 0&& strategy.RetryCount > 0)
+            {
+                pointProperties.Add(RabbitMQKeys.RetryInterval, strategy.RetryInterval.ToString());
+                pointProperties.Add(RabbitMQKeys.RetryCount, strategy.RetryCount.ToString());
+                channel = connection.CreateModel();
+                channel.ExchangeDeclare(RabbitMQKeys.TDX_Value, RabbitMQKeys.Fanout, durable: true, autoDelete: false, arguments: null);
+                channel.ExchangeDeclare(RabbitMQKeys.DLX_Value, RabbitMQKeys.Fanout, durable: true, autoDelete: false, arguments: null);
+
+                Dictionary<string, object> argsDelay = new Dictionary<string, object>();
+                argsDelay.Add(RabbitMQKeys.DeadLetterExchange, RabbitMQKeys.DLX_Value);
+                argsDelay.Add(RabbitMQKeys.MessageTTL, strategy.RetryInterval);
+                // 延时队列 发生死信后，再被投递到死信队列。
+                channel.QueueDeclare(RabbitMQKeys.TDQ_Value, true, false, false, argsDelay);
+                channel.QueueBind(RabbitMQKeys.TDQ_Value, RabbitMQKeys.TDX_Value, string.Empty);
+
+                // 死信队列；消息重新投递到消息队列，并在消息头设置消息重试次数
+                channel.QueueDeclare(RabbitMQKeys.DLQ_Value, true, false, false, null);
+                channel.QueueBind(RabbitMQKeys.DLQ_Value, RabbitMQKeys.DLX_Value, string.Empty);
+
+                var consumer = new EventingBasicConsumer(channel);
+                consumer.Received += Consumer_Received;
+                channel.BasicQos(0, 1, false);
+                // 监听死信队列
+                channel.BasicConsume(RabbitMQKeys.DLQ_Value, false, consumer);
+
+                pointProperties.AddWithDuplicate(RabbitMQKeys.TDX, RabbitMQKeys.TDX_Value);
+                pointProperties.AddWithDuplicate(RabbitMQKeys.DLX_Value, RabbitMQKeys.DLX_Value);
+            }
+        }
+
+        /// <summary>
+        /// 死信队列监听处理;重新投递消息到消息队列
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void Consumer_Received(object sender, BasicDeliverEventArgs e)
+        {
+            var body = e.Body;
+            var msgStr = Encoding.UTF8.GetString(body);
+            IMessage message = JsonConvert.DeserializeObject<TextMessage>(msgStr);
+            if(pointProperties.TryGetValue(RabbitMQKeys.RetryCount,out string retryCount) && int.TryParse(retryCount,out int totalCount))
+            {
+                if(message.Headers.TryGetValue(RabbitMQKeys.CurrentRetryNum,out string retryNum) && int.TryParse(retryNum,out int curCount))
+                {
+                    if(totalCount > curCount)
+                    {
+                        curCount += 1;
+                        message.Headers[RabbitMQKeys.CurrentRetryNum] = curCount.ToString();
+                        var msgBody = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(message));
+                        var props = channel.CreateBasicProperties();
+                        props.Persistent = true;
+                        channel.ConfirmSelect();
+                        // 重新投递到消息队列
+                        channel.BasicPublish(message.Headers[RabbitMQKeys.Exchange], "", props, msgBody);
+                        channel.WaitForConfirms();
+                    }
+                }
+                else
+                {
+                    message.PutHeader(RabbitMQKeys.CurrentRetryNum, "1");
+                    var msgBody = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(message));
+                    var props = channel.CreateBasicProperties();
+                    props.Persistent = true;
+                    channel.ConfirmSelect();
+                    // 重新投递到消息队列
+                    channel.BasicPublish(message.Headers[RabbitMQKeys.Exchange], "", props, msgBody);
+                    channel.WaitForConfirms();
+                }
+
+            }
+            }
+
+        public RetryStrategyConfig GetRetryStrategy()
+        {
+            return this.retryStrategy;
         }
     }
 

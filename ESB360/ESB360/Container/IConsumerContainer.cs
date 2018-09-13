@@ -12,8 +12,8 @@ namespace ESB360
         /// <summary>
         /// 增加消费者
         /// </summary>
-        /// <param name="key">RabbitMQ:exchange_topic形式</param>
-        void Add(string key);
+        /// <param name="properties"></param>
+        void Add(Dictionary<string, string> properties);
 
         /// <summary>
         /// 删除消费者

@@ -78,7 +78,7 @@ namespace ESB360.Core
                 this.Port = "5672";
                 this.UserName = "test";
                 this.Password = "test";
-                this.Extends = "RetryCount=10&RetryInterval=120000";
+                this.Extends = "retrycount=2&msgexpaire=1000&tdx=exchange.dlx.test";
             }
             return config;
         }

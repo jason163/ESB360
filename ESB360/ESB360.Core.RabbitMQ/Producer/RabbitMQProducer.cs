@@ -71,7 +71,7 @@ namespace ESB360.Core.RabbitMQ
 
         public void Startup()
         {
-            throw new NotImplementedException();
+            return;
         }
 
         public virtual void Shutdown()

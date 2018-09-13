@@ -13,16 +13,15 @@ namespace ESB360.Core.RabbitMQ
     {
         private static ConcurrentDictionary<string, IConsumer> consumerContainer = new ConcurrentDictionary<string, IConsumer>();
 
-        public void Add(string key)
+        public void Add(Dictionary<string,string> properties)
         {
+            if(!properties.TryGetValue(RabbitMQKeys.Topic, out string key))
+            {
+                throw new ESBCoreException("Properties no set topic");
+            }
+
             if(!consumerContainer.ContainsKey(key))
             {
-                Dictionary<string, string> properties = new Dictionary<string, string>();
-                string exchange = key.Split('_')[0];
-                string topic = key.Split('_')[1];
-                properties.Add(RabbitMQKeys.Exchange, exchange);
-                properties.Add(RabbitMQKeys.Topic, topic);
-
                 // 从默认路径加载配置文件
                 var config = new MessageChannelConfig();
                 MessageChannelAdapter adapter = new MessageChannelAdapter(config);
@@ -34,7 +33,7 @@ namespace ESB360.Core.RabbitMQ
 
                 consumer.Startup();
                 consumer.Resume();
-                consumerContainer.TryAdd(topic, consumer);
+                consumerContainer.TryAdd(key, consumer);
             }
         }
 

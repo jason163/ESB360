@@ -51,7 +51,7 @@ namespace ESB360.Core.RabbitMQ
 
             if (consumerProperties.TryGetValue(RabbitMQKeys.TDX, out string tdx_value))
             {
-                // 申明死信队列 
+                // 申明延时队列 
                 Dictionary<string, object> argsDelay = new Dictionary<string, object>();
                 argsDelay.Add(RabbitMQKeys.DeadLetterExchange, tdx_value);
                 channel.QueueDeclare(consumerProperties[RabbitMQKeys.Topic], durable: true, exclusive: false, autoDelete: false, arguments: argsDelay);
@@ -74,6 +74,7 @@ namespace ESB360.Core.RabbitMQ
 
         }
 
+
         /// <summary>
         /// 消息处理函数
         /// </summary>
@@ -83,8 +84,7 @@ namespace ESB360.Core.RabbitMQ
         {
             byte[] body = e.Body;
             var msg = Encoding.UTF8.GetString(body);
-
-            IMessage message = JsonConvert.DeserializeObject<TextMessage>(msg);
+            
             if(consumerProcessor == null)
             {
                 throw new ESBCoreException("Processor can not be null!");
@@ -92,6 +92,8 @@ namespace ESB360.Core.RabbitMQ
 
             try
             {
+                IMessage message = JsonConvert.DeserializeObject<TextMessage>(msg);
+
                 bool rst = consumerProcessor.Process(message).Result;
 
                 if (rst)
@@ -118,7 +120,7 @@ namespace ESB360.Core.RabbitMQ
 
         public void Startup()
         {
-            throw new NotImplementedException();
+            return;
         }
     }
 }

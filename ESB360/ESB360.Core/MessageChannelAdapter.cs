@@ -42,6 +42,18 @@ namespace ESB360.Core
                 // 通道实现实例
                 channelPoint = GenerateChannelPoint();
 
+                RetryStrategyConfig retryConfig = new RetryStrategyConfig();
+                if (channelConfig.Properties.TryGetValue("msgexpaire", out string RetryInterval) && int.TryParse(RetryInterval, out int interval))
+                {
+                    retryConfig.RetryInterval = interval;
+                }
+                if (channelConfig.Properties.TryGetValue("retrycount",out string retryCount) && int.TryParse(retryCount,out int count))
+                {
+                    retryConfig.RetryCount = count;
+                }                
+                // 根据配置设置信息重试方式延时+重试
+                channelPoint.SetRetryStrategy(retryConfig);
+
                 channelPoint.Startup();
                 channelPointContainer.TryAdd(key, channelPoint);
             }
